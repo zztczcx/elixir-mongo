@@ -88,7 +88,7 @@ defmodule Mongo.Collection do
       Request.insert(collection, docs))
     case collection.opts[:wc] do
       nil -> {:ok, docs}
-      :safe -> case collection.db.getLastError do
+      :safe -> case collection.db |> Mongo.Db.getLastError do
         :ok -> {:ok, docs}
         error -> error
       end
@@ -111,7 +111,7 @@ defmodule Mongo.Collection do
       Request.update(collection, query, update, upsert, multi))
     case collection.opts[:wc] do
       nil -> :ok
-      :safe -> collection.db.getLastError
+      :safe -> collection.db |> Mongo.Db.getLastError
     end
   end
 
@@ -130,7 +130,7 @@ defmodule Mongo.Collection do
      Request.delete(collection, query, justOne))
     case collection.opts[:wc] do
       nil -> :ok
-      :safe -> collection.db.getLastError
+      :safe -> collection.db |> Mongo.Db.getLastError
     end
   end
 
