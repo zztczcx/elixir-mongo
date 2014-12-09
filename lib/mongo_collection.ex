@@ -293,9 +293,11 @@ defmodule Mongo.Collection do
   @doc """
   Creates an index for the collection
   """
-  def createIndex(collection, name, key, unique \\ false) do
+  def createIndex(collection, name, key, unique \\ false, options \\ %{}) do
     system_indexes = new(collection.db, "system.indexes")
-    %{name: name, ns: collection.db.name <> "." <> collection.name, key: key, unique: unique} |> insert_one(system_indexes)
+    %{name: name, ns: collection.db.name <> "." <> collection.name, key: key, unique: unique} 
+    |> Map.merge(options)
+    |> insert_one(system_indexes)
   end
 
 end
