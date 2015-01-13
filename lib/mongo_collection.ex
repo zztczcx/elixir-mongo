@@ -247,7 +247,7 @@ defmodule Mongo.Collection do
   @doc """
   Calculates aggregate values for the data in the collection (see db.collection.aggregate)
 
-      iex> collection = Mongo.connect! |> Mongo.db("test") |> Mongo.Db.collection("anycoll")
+      iex> collection = Mongo.Helpers.test_collection("anycoll")
       ...> collection |> Mongo.Collection.aggregate([
       ...>    %{'$skip': 1},
       ...>    %{'$limit': 5},
