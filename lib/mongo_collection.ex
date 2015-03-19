@@ -300,4 +300,30 @@ defmodule Mongo.Collection do
     |> insert_one(system_indexes)
   end
 
+  @doc """
+  Gets a list of All Indexes
+  """
+  def getIndexes(collection) do
+    system_indexes = new(collection.db, "system.indexes")
+    |> find(%{ns: collection.db.name <> "." <> collection.name}) 
+    |> Enum.to_list
+  end
+
+  @doc """
+  Remove a Specific Index
+  col = Mongo.connect! |> Mongo.db("AF_VortexShort_2358") |> Mongo.Db.collection("test.test")
+  col |> Mongo.Collection.dropIndex(%{time: 1})
+  """
+  def dropIndex(collection, key) do
+    Server.send(collection.db.mongo,
+                Request.cmd(collection.db.name, %{deleteIndexes: collection.name}, %{index: key}))
+  end
+
+  @doc """
+  Remove All Indexes
+  """
+  def dropIndexes(collection) do
+    dropIndex(collection, "*")
+  end
+
 end
