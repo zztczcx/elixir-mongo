@@ -3,7 +3,7 @@ services:
   - mongodb
 notifications:
   email:
-    - jerp@checkiz.com
+    - zztczcx@gmail.com
 otp_release:
   - 17.1
 before_install:
@@ -14,4 +14,4 @@ before_script:
   - export PATH=`pwd`/elixir/bin:$PATH
   - mix local.hex --force
   - mix deps.get
-script: "MIX_ENV=test mix do deps.get, test"
+script: "MIX_ENV=test mix test"
