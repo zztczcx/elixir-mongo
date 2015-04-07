@@ -201,7 +201,7 @@ defmodule Mongo.Response do
     case cmd(response) do
       {:ok, doc} ->
         case doc[:err] do
-          nil -> :ok
+          nil -> {:ok, doc}
           _ -> {:error, doc}
         end
       error -> error
