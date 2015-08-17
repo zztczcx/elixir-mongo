@@ -4,7 +4,7 @@ defmodule Mongo.Mixfile do
   def project do
     [ app: :mongo,
       name: "mongo",
-      version: "0.5.0",
+      version: "0.5.1",
       elixir: "~> 1.0.0",
       source_url: "https://github.com/checkiz/elixir-mongo",
       description: "MongoDB driver for Elixir",
