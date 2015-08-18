@@ -192,6 +192,7 @@ defmodule Mongo.Server do
   # default server options
   defp options(mongo) do
     [ active: false,
+      nodelay: true,
       send_timeout: mongo.timeout,
       send_timeout_close: true ]
   end
