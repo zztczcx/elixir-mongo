@@ -79,10 +79,10 @@ defmodule Mongo.Server do
   @doc """
   Retreives a repsonce from the MongoDB server (only for passive mode)
   """
-  def response(mongo, decoder \\ &(Mongo.Response.bson_decode(&1))) do
+  def response(mongo) do
     case tcp_recv(mongo) do
       {:ok, <<messageLength::32-signed-little, _::binary>> = message} ->
-        complete(mongo, messageLength, message) |> Mongo.Response.new(decoder)
+        complete(mongo, messageLength, message) |> Mongo.Response.new
       {:error, msg} -> %Mongo.Error{msg: msg}
     end
   end

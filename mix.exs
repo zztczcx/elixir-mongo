@@ -24,7 +24,7 @@ defmodule Mongo.Mixfile do
   # Returns the list of dependencies for prod
   defp deps(:prod) do
     [
-      bson: "~> 0.4.2"
+      {:cbson, github: "sean-lin/elixir-cbson"},
     ]
   end
 
