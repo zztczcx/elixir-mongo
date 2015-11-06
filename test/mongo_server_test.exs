@@ -88,7 +88,7 @@ defmodule Mongo.Server.Test do
     1..5000 |>
       Enum.map(&(%{a: &1, value: "this should be long enough"}))
        |> Mongo.Collection.insert(timout_test)
-    assert :ok = Mongo.Db.getLastError(db)
+    assert {:ok, _doc} = Mongo.Db.getLastError(db)
     db = Mongo.connect!(%{timeout: 1}) |> Mongo.db("test")
     timout_test = Mongo.Db.collection(db, "timout_test")
     assert %Mongo.Error{msg: :timeout} == timout_test |> Mongo.Collection.find("obj.a == 1 || obj.a == 49000") |> Mongo.Find.exec

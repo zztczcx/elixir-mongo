@@ -20,7 +20,7 @@ defmodule Mongo.Response do
     def reduce(resp, acc, reducer)
     def reduce(%Mongo.Response{buffer: buffer, nbdoc: nbdoc, decoder: decoder}, acc, reducer), do: do_reduce(buffer, nbdoc, decoder, acc, reducer)
 
-    defp do_reduce(_, _, _, {:halt, acc}, _fun),   do: {:halted, acc}
+    defp do_reduce(_, _, _, {:halt, acc}, _fun), do: {:halted, acc}
     defp do_reduce(buffer, nbdoc, decoder, {:suspend, acc}, reducer), do: {:suspended, acc, &do_reduce(buffer, nbdoc, decoder, &1, reducer)}
     defp do_reduce(_, 0, _, {:cont, acc}, _reducer),   do: {:done, acc}
     defp do_reduce(buffer, nbdoc, decoder, {:cont, acc}, reducer) do
@@ -70,8 +70,7 @@ defmodule Mongo.Response do
       cursorID::size(64)-signed-little,                # cursor id if client needs to do get more's
       startingFrom::size(32)-signed-little,            # where in the cursor this reply is starting
       numberReturned::size(32)-signed-little,          # number of documents in the reply
-      buffer::bitstring>>,                             # buffer of Bson documents
-      decoder \\ &(Mongo.Response.bson_decode(&1))) do
+      buffer::bitstring>>) do                          # buffer of Bson documents
     cond do
       cursorNotFound>0 ->
         %Mongo.Error{msg: :"cursor not found"}
@@ -79,7 +78,10 @@ defmodule Mongo.Response do
         if numberReturned>0 do
           %Mongo.Error{
             msg: :"query failure",
-            acc: %Mongo.Response{buffer: buffer, nbdoc: numberReturned, decoder: decoder}|>Enum.to_list}
+            acc: %Mongo.Response{
+              buffer: buffer, 
+              nbdoc: numberReturned, 
+              decoder: &bson_decode/1}|>Enum.to_list}
         else
           %Mongo.Error{msg: :"query failure"}
         end
@@ -89,7 +91,7 @@ defmodule Mongo.Response do
                 nbdoc: numberReturned,
                 buffer: buffer,
                 requestID: requestID,
-                decoder: decoder }}
+                decoder: &bson_decode/1}}
     end
   end
 
@@ -99,10 +101,15 @@ defmodule Mongo.Response do
   Returns `{:ok, doc}` or transfers the error message
   """
   def cmd(%Mongo.Response{nbdoc: 1, buffer: buffer}) do
-    case buffer |> Bson.decode do
-      nil -> %Mongo.Error{msg: :"no document received"}
-      %{ok: ok}=doc when ok>0 -> {:ok, doc}
-      errdoc -> %Mongo.Error{msg: :"cmd error", acc: errdoc}
+    try do
+      case buffer |> Bson.decode([:return_atom]) do
+        nil -> %Mongo.Error{msg: :"no document received"}
+        %{ok: ok}=doc when ok>0 -> {:ok, doc}
+        errdoc -> %Mongo.Error{msg: :"cmd error", acc: errdoc}
+      end
+    catch
+      error -> 
+        %Mongo.Error{msg: "decoe error", acc: buffer} 
     end
   end
 
@@ -201,7 +208,7 @@ defmodule Mongo.Response do
     case cmd(response) do
       {:ok, doc} ->
         case doc[:err] do
-          nil -> :ok
+          nil -> {:ok, doc}
           _ -> {:error, doc}
         end
       error -> error
@@ -211,18 +218,17 @@ defmodule Mongo.Response do
   @doc """
   Helper fuction to decode the first document of a bson buffer
   """
-  def bson_decode(buffer, opts \\ %Bson.Decoder{}) do
-    case Bson.Decoder.document(buffer, opts) do
-      %Bson.Decoder.Error{}=error -> {:halt, %Mongo.Error{msg: :bson, acc: [error]}}
-      {doc, rest} -> {:cont, doc, rest}
-    end
+  def bson_decode(nil) do
+    {:halt, %Mongo.Error{msg: :bson, acc: [:short_return]}}
   end
-
-  @doc """
-  Helper fuction to split buffer into documents in binary format
-  """
-  def bson_no_decoding(<<size::32-little-signed, _rest>>=buffer) do
-    {doc, rest} = :erlang.split_binary(buffer, size)
-    {:cont, doc, rest}
+  def bson_decode(buffer) do
+    try do
+      case Bson.decode(buffer, [:return_atom, :return_trailer]) do
+        {:has_trailer, doc, rest} -> {:cont, doc, rest}
+        doc -> {:cont, doc, nil}
+      end
+    catch
+      error ->  {:halt, %Mongo.Error{msg: :bson, acc: [error]}}
+    end
   end
 end

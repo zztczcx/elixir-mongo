@@ -79,10 +79,10 @@ defmodule Mongo.Server do
   @doc """
   Retreives a repsonce from the MongoDB server (only for passive mode)
   """
-  def response(mongo, decoder \\ &(Mongo.Response.bson_decode(&1))) do
+  def response(mongo) do
     case tcp_recv(mongo) do
       {:ok, <<messageLength::32-signed-little, _::binary>> = message} ->
-        complete(mongo, messageLength, message) |> Mongo.Response.new(decoder)
+        complete(mongo, messageLength, message) |> Mongo.Response.new
       {:error, msg} -> %Mongo.Error{msg: msg}
     end
   end
@@ -125,9 +125,9 @@ defmodule Mongo.Server do
   @doc """
   Executes an admin command to the server
 
-    iex> mongo = Mongo.connect!  # Returns a exception when connection fails
+    iex> Mongo.connect!  # Returns a exception when connection fails
     iex> case Mongo.connect do
-    ...>    {:ok, mongo } -> :ok
+    ...>    {:ok, _mongo } -> :ok
     ...>    error -> error
     ...> end
     :ok
@@ -192,6 +192,7 @@ defmodule Mongo.Server do
   # default server options
   defp options(mongo) do
     [ active: false,
+      nodelay: true,
       send_timeout: mongo.timeout,
       send_timeout_close: true ]
   end
@@ -275,7 +276,7 @@ defmodule Mongo.Server do
   defp gen_client_prefix, do: :crypto.rand_uniform(0, 65535)
   # returns a 6 bites prefix integer
   defp gen_trans_prefix do
-    {gs, s, ms} = :erlang.now
+    {gs, s, ms} = :erlang.timestamp()
     (gs * 1000000000000 + s * 1000000 + ms) &&& 281474976710655
   end
 
@@ -287,7 +288,10 @@ defmodule Mongo.Server do
   # add request ID to a payload message
   defp message(payload, reqid)
   defp message(payload, reqid) do
-    <<(byte_size(payload) + 12)::size(32)-little>> <> reqid <> <<0::32>> <> <<payload::binary>>
+    [
+      <<(:erlang.iolist_size(payload) + 12)::size(32)-little>>, 
+      reqid, <<0::32>>, payload
+    ]
   end
   # generates a request Id when not provided (makes sure it is a positive integer)
   defp gen_reqid() do

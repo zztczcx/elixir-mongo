@@ -46,21 +46,21 @@ defmodule Mongo.Crud.Test do
     end
     if true do
       assert %{'_id': 2, a: 456} |> Mongo.Collection.insert_one!(anycoll) |> is_map
-      assert ctx[:db] |> Mongo.Db.getLastError == :ok
+      assert {:ok, _} = ctx[:db] |> Mongo.Db.getLastError 
     end
   end
 
   test "update", ctx do
     if true do
       ctx[:anycoll] |> Mongo.Collection.update(%{a: 456}, %{a: 123, b: 789})
-      assert ctx[:db] |> Mongo.Db.getLastError == :ok
+      assert {:ok, _} = ctx[:db] |> Mongo.Db.getLastError
     end
   end
 
   test "delete", ctx do
     if true do
       ctx[:anycoll] |> Mongo.Collection.delete(%{b: 789})
-      assert ctx[:db] |> Mongo.Db.getLastError == :ok
+      assert {:ok, _} = ctx[:db] |> Mongo.Db.getLastError
     end
   end
 

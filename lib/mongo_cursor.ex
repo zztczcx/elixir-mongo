@@ -56,7 +56,6 @@ defmodule Mongo.Cursor do
             {:done, acc}
           else
             case Mongo.Cursor.next_batch(cursor) do
-              %Mongo.Cursor{exhausted: true} -> {:done, acc}
               %Mongo.Cursor{}=cursor -> reduce(cursor, {:cont, acc}, reducer)
               error -> {:halted, %Mongo.Error{error| acc: [cursor | error.acc]}}
             end
